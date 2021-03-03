@@ -1,45 +1,26 @@
 /* eslint-disable prefer-object-spread */
 const path = require('path')
 const LoadableWebpackPlugin = require('@loadable/webpack-plugin')
-const LoadableBabelPlugin = require('@loadable/babel-plugin')
-const babelPresetRazzle = require('razzle/babel')
 
 module.exports = {
-  modify: (config, { dev, target }) => {
-    const appConfig = Object.assign({}, config)
+  modifyWebpackConfig(opts) {
+    const config = opts.webpackConfig
 
-    if (target === 'web') {
+    // add loadable webpack plugin only
+    // when we are building the client bundle
+    if (opts.env.target === 'web') {
       const filename = path.resolve(__dirname, 'build')
 
-      appConfig.plugins = [
-        ...appConfig.plugins,
+      // saving stats file to build folder
+      // without this, stats files will go into
+      // build/public folder
+      config.plugins.push(
         new LoadableWebpackPlugin({
           outputAsset: false,
           writeToDisk: { filename },
         }),
-      ]
-
-      appConfig.output.filename = dev
-        ? 'static/js/[name].js'
-        : 'static/js/[name].[chunkhash:8].js'
-
-      appConfig.node = { fs: 'empty' } // fix "Cannot find module 'fs'" problem.
-
-      appConfig.optimization = Object.assign({}, appConfig.optimization, {
-        runtimeChunk: true,
-        splitChunks: {
-          chunks: 'all',
-          name: dev,
-        },
-      })
+      )
     }
-
-    return appConfig
+    return config
   },
-
-  modifyBabelOptions: () => ({
-    babelrc: false,
-    presets: [babelPresetRazzle],
-    plugins: [LoadableBabelPlugin],
-  }),
 }
